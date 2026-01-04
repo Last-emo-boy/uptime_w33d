@@ -73,3 +73,4 @@
 - [x] 最终检查与验证 (端口逻辑与配置一致性)
 - [x] 修复前端构建错误 (Typescript & PostCSS)
 - [x] 修复后端 Docker 构建错误 (Go Version Mismatch & Dependency Downgrade)
+- [x] 升级后端至 Go 1.24 (Dockerfile & go.mod) 以适配最新依赖
