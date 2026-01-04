@@ -5,7 +5,7 @@ import {
   Typography, Paper, Container, Box, Chip, Stack, LinearProgress,
   Accordion, AccordionSummary, AccordionDetails, Link
 } from '@mui/material';
-import { CheckCircle, XCircle, AlertCircle, ChevronDown, Activity, Globe, Server, Radio, Gamepad2, Container as ContainerIcon } from 'lucide-react';
+import { CheckCircle, AlertCircle, ChevronDown, Activity, Globe, Server, Radio, Gamepad2, Container as ContainerIcon } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 

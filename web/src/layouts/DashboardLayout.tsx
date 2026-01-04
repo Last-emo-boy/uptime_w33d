@@ -5,12 +5,9 @@ import {
 } from '@mui/material';
 import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle, Globe, Folder } from 'lucide-react';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '../lib/api';
-
-const drawerWidth = 260;
 
 export default function DashboardLayout() {
+  const drawerWidth = 260;
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);

@@ -57,7 +57,7 @@ export default function MonitorGroups() {
   });
 
   const { control, handleSubmit, reset, setValue } = useForm<GroupForm>({
-    resolver: zodResolver(groupSchema),
+    resolver: zodResolver(groupSchema) as any,
     defaultValues: {
       name: '',
       order: 0,
