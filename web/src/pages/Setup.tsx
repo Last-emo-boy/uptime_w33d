@@ -45,7 +45,9 @@ export default function Setup() {
       localStorage.setItem('token', loginRes.data.token);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Setup failed. Please try again.');
+      console.error("Setup error:", err);
+      const msg = err.response?.data?.error || err.message || 'Setup failed. Please check network connection.';
+      setError(msg);
     }
   };
 
