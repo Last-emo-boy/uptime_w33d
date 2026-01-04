@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: uptime_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-uptime_w33d}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: uptime_redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: uptime_backend
+    restart: always
+    depends_on:
+      - db
+      - redis
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-uptime_w33d}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET:-changeme}
+    ports:
+      - "127.0.0.1:7080:8080"
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://status-api.w33d.xyz
+    container_name: uptime_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3090:80"
+
+volumes:
+  postgres_data:
