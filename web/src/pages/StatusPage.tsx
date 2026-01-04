@@ -130,7 +130,7 @@ export default function StatusPage() {
     </Box>
   );
 
-  const overallStatus = data?.monitors?.every(m => m.last_status === 'up') 
+  const overallStatus = (!data?.monitors || data.monitors.length === 0 || data.monitors.every(m => m.last_status === 'up'))
     ? 'All Systems Operational' 
     : 'Some Systems Down';
 

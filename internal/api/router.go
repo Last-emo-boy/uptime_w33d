@@ -127,6 +127,14 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				subs.DELETE("", subHandler.Unsubscribe)
 				subs.GET("/monitor/:monitorID", subHandler.ListByMonitor)
 			}
+
+			// Incident Routes
+			incidents := protected.Group("/incidents")
+			{
+				incidents.GET("", incidentHandler.ListActive) // For admin list
+				incidents.POST("", incidentHandler.Create)
+				incidents.POST("/:id/resolve", incidentHandler.Resolve)
+			}
 		}
 	}
 

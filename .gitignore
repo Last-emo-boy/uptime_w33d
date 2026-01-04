@@ -1,0 +1,22 @@
+# Binaries
+server
+server.exe
+
+# Environment variables
+.env
+
+# Go
+go.sum
+
+# Frontend Build Artifacts
+web/dist/
+web/node_modules/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+*.exe
