@@ -12,6 +12,16 @@ BLUE='\033[0;34m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# Detect docker compose command
+if docker compose version &> /dev/null; then
+    DC="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DC="docker-compose"
+else
+    echo -e "${RED}[ERROR] Neither 'docker compose' nor 'docker-compose' found.${NC}"
+    exit 1
+fi
+
 function print_info() {
     echo -e "${BLUE}[INFO] $1${NC}"
 }
@@ -28,13 +38,6 @@ function check_docker() {
     if ! command -v docker &> /dev/null; then
         print_error "Docker is not installed. Please install Docker first."
         exit 1
-    fi
-    if ! command -v docker-compose &> /dev/null; then
-        # Check if 'docker compose' plugin is available
-        if ! docker compose version &> /dev/null; then
-             print_error "Docker Compose is not installed."
-             exit 1
-        fi
     fi
 }
 
@@ -54,39 +57,46 @@ function update_code() {
 }
 
 function start_services() {
-    print_info "Starting services..."
-    docker-compose up -d --build
+    print_info "Starting services using $DC..."
+    $DC up -d --build --remove-orphans
     if [ $? -eq 0 ]; then
         print_success "Services started successfully."
         print_info "Backend: http://127.0.0.1:7080"
         print_info "Frontend: http://127.0.0.1:3090"
     else
-        print_error "Failed to start services."
-        exit 1
+        print_error "Failed to start services. Trying to remove old containers and retry..."
+        $DC down
+        $DC up -d --build --remove-orphans
+        if [ $? -eq 0 ]; then
+             print_success "Services started successfully after cleanup."
+        else
+             print_error "Failed to start services even after cleanup."
+             exit 1
+        fi
     fi
 }
 
 function stop_services() {
     print_info "Stopping services..."
-    docker-compose stop
+    $DC stop
 }
 
 function remove_services() {
     print_info "Removing services and containers..."
-    docker-compose down
+    $DC down
 }
 
 function restart_services() {
     print_info "Restarting services..."
-    docker-compose restart
+    $DC restart
 }
 
 function show_logs() {
-    docker-compose logs -f
+    $DC logs -f
 }
 
 function show_status() {
-    docker-compose ps
+    $DC ps
 }
 
 function clean_system() {
