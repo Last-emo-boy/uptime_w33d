@@ -58,21 +58,21 @@ function update_code() {
 
 function start_services() {
     print_info "Starting services using $DC..."
+    
+    # Check if we need to remove old containers (fix for ContainerConfig error)
+    if $DC ps -q | grep -q .; then
+        print_info "Existing containers found. Removing them to ensure clean state..."
+        $DC down --remove-orphans
+    fi
+
     $DC up -d --build --remove-orphans
     if [ $? -eq 0 ]; then
         print_success "Services started successfully."
         print_info "Backend: http://127.0.0.1:7080"
         print_info "Frontend: http://127.0.0.1:3090"
     else
-        print_error "Failed to start services. Trying to remove old containers and retry..."
-        $DC down
-        $DC up -d --build --remove-orphans
-        if [ $? -eq 0 ]; then
-             print_success "Services started successfully after cleanup."
-        else
-             print_error "Failed to start services even after cleanup."
-             exit 1
-        fi
+        print_error "Failed to start services."
+        exit 1
     fi
 }
 
