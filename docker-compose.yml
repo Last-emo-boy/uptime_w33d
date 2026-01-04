@@ -48,7 +48,7 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://status-api.w33d.xyz
+        VITE_API_URL: ${VITE_API_URL:-http://status-api.w33d.xyz}
     container_name: uptime_frontend
     restart: always
     depends_on:

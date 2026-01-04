@@ -1,38 +1,154 @@
 #!/bin/bash
 
 # Uptime W33d Deployment Script
+# Usage: ./deploy.sh [command]
 
-echo "Starting deployment..."
+APP_DIR=$(dirname "$(readlink -f "$0")")
+cd "$APP_DIR" || exit
 
-# 1. Update Code
-echo "Updating code from Git..."
-git pull
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-# 2. Build & Start Containers
-echo "Building and starting Docker containers..."
-docker-compose down
-docker-compose up -d --build
+function print_info() {
+    echo -e "${BLUE}[INFO] $1${NC}"
+}
 
-# 3. Setup Nginx
-echo "Setting up Nginx..."
-if [ -d "/etc/nginx/conf.d" ]; then
-    echo "Copying Nginx configs..."
-    sudo cp deploy/nginx/*.conf /etc/nginx/conf.d/
-    
-    echo "Testing Nginx config..."
-    sudo nginx -t
-    
-    if [ $? -eq 0 ]; then
-        echo "Reloading Nginx..."
-        sudo systemctl reload nginx
-        echo "Nginx reloaded successfully."
-    else
-        echo "Nginx config test failed. Please check logs."
+function print_success() {
+    echo -e "${GREEN}[SUCCESS] $1${NC}"
+}
+
+function print_error() {
+    echo -e "${RED}[ERROR] $1${NC}"
+}
+
+function check_docker() {
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker is not installed. Please install Docker first."
+        exit 1
     fi
-else
-    echo "Nginx conf.d directory not found. Please ensure Nginx is installed."
+    if ! command -v docker-compose &> /dev/null; then
+        # Check if 'docker compose' plugin is available
+        if ! docker compose version &> /dev/null; then
+             print_error "Docker Compose is not installed."
+             exit 1
+        fi
+    fi
+}
+
+function update_code() {
+    if [ -d ".git" ]; then
+        print_info "Pulling latest code from git..."
+        git pull
+        if [ $? -eq 0 ]; then
+            print_success "Code updated successfully."
+        else
+            print_error "Failed to pull code. Please check your git configuration."
+            exit 1
+        fi
+    else
+        print_info "Not a git repository. Skipping git pull."
+    fi
+}
+
+function start_services() {
+    print_info "Starting services..."
+    docker-compose up -d --build
+    if [ $? -eq 0 ]; then
+        print_success "Services started successfully."
+        print_info "Backend: http://127.0.0.1:7080"
+        print_info "Frontend: http://127.0.0.1:3090"
+    else
+        print_error "Failed to start services."
+        exit 1
+    fi
+}
+
+function stop_services() {
+    print_info "Stopping services..."
+    docker-compose stop
+}
+
+function remove_services() {
+    print_info "Removing services and containers..."
+    docker-compose down
+}
+
+function restart_services() {
+    print_info "Restarting services..."
+    docker-compose restart
+}
+
+function show_logs() {
+    docker-compose logs -f
+}
+
+function show_status() {
+    docker-compose ps
+}
+
+function clean_system() {
+    print_info "Cleaning up unused Docker resources..."
+    docker system prune -f
+}
+
+function help() {
+    echo "Usage: ./deploy.sh [command]"
+    echo "Commands:"
+    echo "  deploy  - Pull latest code, rebuild and start services (Update)"
+    echo "  start   - Start services"
+    echo "  stop    - Stop services"
+    echo "  down    - Stop and remove containers"
+    echo "  restart - Restart services"
+    echo "  logs    - View logs"
+    echo "  status  - Check service status"
+    echo "  clean   - Clean unused docker resources"
+    echo "  help    - Show this help message"
+}
+
+# Main logic
+check_docker
+
+if [ ! -f .env ]; then
+    print_info "Creating .env file from .env.example..."
+    if [ -f .env.example ]; then
+        cp .env.example .env
+        print_success ".env file created. Please edit it with your configuration."
+    else
+        print_error ".env.example file not found. Please create .env manually."
+    fi
 fi
 
-echo "Deployment complete!"
-echo "Frontend: http://status.w33d.xyz"
-echo "Backend: http://status-api.w33d.xyz"
+case "$1" in
+    deploy)
+        update_code
+        start_services
+        clean_system
+        ;;
+    start)
+        start_services
+        ;;
+    stop)
+        stop_services
+        ;;
+    down)
+        remove_services
+        ;;
+    restart)
+        restart_services
+        ;;
+    logs)
+        show_logs
+        ;;
+    status)
+        show_status
+        ;;
+    clean)
+        clean_system
+        ;;
+    *)
+        help
+        ;;
+esac
