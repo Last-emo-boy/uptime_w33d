@@ -16,7 +16,7 @@ import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy } from 'luci
 const monitorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   type: z.enum(['http', 'tcp', 'ping', 'dns', 'push']),
-  target: z.string().min(1, 'Target is required'),
+  target: z.string().optional(),
   interval: z.coerce.number().min(10, 'Minimum interval is 10s'),
   timeout: z.coerce.number().min(1),
   expected_status: z.string().optional(),
@@ -78,7 +78,7 @@ export default function Monitors() {
   });
 
   const { control, handleSubmit, reset, setValue, watch } = useForm<MonitorForm>({
-    resolver: zodResolver(monitorSchema),
+    resolver: zodResolver(monitorSchema) as any,
     defaultValues: {
       name: '',
       type: 'http',

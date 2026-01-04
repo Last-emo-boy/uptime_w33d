@@ -71,3 +71,4 @@
   - 前端: `status.w33d.xyz` (Port: 3090)
   - 后端: `status-api.w33d.xyz` (Port: 7080)
 - [x] 最终检查与验证 (端口逻辑与配置一致性)
+- [x] 修复前端构建错误 (Typescript & PostCSS)

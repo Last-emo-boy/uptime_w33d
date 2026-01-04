@@ -1,8 +1,8 @@
-import { createTheme, ThemeOptions } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
 const themeOptions: ThemeOptions = {
   palette: {
-    mode: 'light',
+    mode: 'light' as const,
     primary: {
       main: '#6366f1', // Indigo
       light: '#818cf8',

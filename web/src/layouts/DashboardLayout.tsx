@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
-  Box, Drawer, AppBar, Toolbar, List, Typography, Divider, 
+  Box, Drawer, AppBar, Toolbar, List, Typography, 
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, IconButton, Stack
 } from '@mui/material';
 import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight } from 'lucide-react';

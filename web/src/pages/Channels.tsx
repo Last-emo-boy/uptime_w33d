@@ -14,7 +14,14 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 const channelSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   type: z.enum(['webhook', 'email']),
-  config: z.string().min(1, 'Config JSON is required'), // In real app, we should use form builder per type
+  config: z.string().min(1, 'Config is required').refine((val) => {
+    try {
+      JSON.parse(val);
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'Invalid JSON'),
   enabled: z.boolean().default(true),
 });
 
@@ -59,7 +66,7 @@ export default function Channels() {
   });
 
   const { control, handleSubmit, reset, setValue } = useForm<ChannelForm>({
-    resolver: zodResolver(channelSchema),
+    resolver: zodResolver(channelSchema) as any,
     defaultValues: {
       name: '',
       type: 'webhook',
@@ -67,6 +74,7 @@ export default function Channels() {
       enabled: true,
     },
   });
+
 
   const handleOpen = (channel?: Channel) => {
     if (channel) {
@@ -185,6 +193,8 @@ export default function Channels() {
                   <TextField {...field} select label="Type" fullWidth>
                     <MenuItem value="webhook">Webhook</MenuItem>
                     <MenuItem value="email">Email</MenuItem>
+                    <MenuItem value="telegram" disabled>Telegram (Coming Soon)</MenuItem>
+                    <MenuItem value="slack" disabled>Slack (Coming Soon)</MenuItem>
                   </TextField>
                 )}
               />
@@ -203,6 +213,7 @@ export default function Channels() {
                   />
                 )}
               />
+              {/* {type === 'webhook' && ( ... )} */}
             </Stack>
           </DialogContent>
           <DialogActions>
