@@ -72,3 +72,4 @@
   - 后端: `status-api.w33d.xyz` (Port: 7080)
 - [x] 最终检查与验证 (端口逻辑与配置一致性)
 - [x] 修复前端构建错误 (Typescript & PostCSS)
+- [x] 修复后端 Docker 构建错误 (Go Version Mismatch)
