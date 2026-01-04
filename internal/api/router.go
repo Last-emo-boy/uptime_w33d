@@ -24,6 +24,8 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	authService := services.NewAuthService(userRepo)
 	authHandler := handlers.NewAuthHandler(authService)
 
+	systemHandler := handlers.NewSystemHandler(authService)
+
 	monitorRepo := repository.NewMonitorRepository(db)
 	monitorService := services.NewMonitorService(monitorRepo)
 	monitorHandler := handlers.NewMonitorHandler(monitorService)
@@ -48,6 +50,11 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	// Status Page
 	statusHandler := handlers.NewStatusPageHandler(monitorRepo, resultRepo)
 
+	// Incident Management
+	incidentRepo := repository.NewIncidentRepository(db)
+	incidentService := services.NewIncidentService(incidentRepo)
+	incidentHandler := handlers.NewIncidentHandler(incidentService)
+
 	// API Group
 	api := r.Group("/api")
 	{
@@ -61,6 +68,10 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		// Public Status Page
 		api.GET("/public/status", statusHandler.GetStatus)
 		api.GET("/public/monitors/:id/history", statusHandler.GetMonitorHistory)
+		api.GET("/public/incidents", incidentHandler.ListActive) // Public incidents
+
+		// System Status
+		api.GET("/system/status", systemHandler.GetStatus)
 
 		// Push Route (Public)
 		api.GET("/push/:token", pushHandler.HandleHeartbeat)

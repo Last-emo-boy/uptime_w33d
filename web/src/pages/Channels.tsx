@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 const channelSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  type: z.enum(['webhook', 'email']),
+  type: z.enum(['webhook', 'email', 'discord', 'telegram']),
   config: z.string().min(1, 'Config is required').refine((val) => {
     try {
       JSON.parse(val);
@@ -193,8 +193,8 @@ export default function Channels() {
                   <TextField {...field} select label="Type" fullWidth>
                     <MenuItem value="webhook">Webhook</MenuItem>
                     <MenuItem value="email">Email</MenuItem>
-                    <MenuItem value="telegram" disabled>Telegram (Coming Soon)</MenuItem>
-                    <MenuItem value="slack" disabled>Slack (Coming Soon)</MenuItem>
+                    <MenuItem value="discord">Discord</MenuItem>
+                    <MenuItem value="telegram">Telegram</MenuItem>
                   </TextField>
                 )}
               />

@@ -12,6 +12,7 @@ type UserRepository interface {
 	Create(user *models.User) error
 	GetByUsername(username string) (*models.User, error)
 	GetByID(id uint) (*models.User, error)
+	Count() (int64, error)
 }
 
 type userRepository struct {
@@ -35,6 +36,14 @@ func (r *userRepository) GetByUsername(username string) (*models.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) Count() (int64, error) {
+	var count int64
+	if err := r.db.Model(&models.User{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (r *userRepository) GetByID(id uint) (*models.User, error) {

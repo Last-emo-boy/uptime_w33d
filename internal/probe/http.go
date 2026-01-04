@@ -77,5 +77,12 @@ func (p *HTTPProbe) Check(monitor models.Monitor) Result {
 
 	res := p.RecordResult(success, msg, duration)
 	res.Data["status_code"] = resp.StatusCode
+
+	// SSL Check
+	if resp.TLS != nil && len(resp.TLS.PeerCertificates) > 0 {
+		cert := resp.TLS.PeerCertificates[0]
+		res.Data["cert_expiry"] = cert.NotAfter
+	}
+
 	return res
 }

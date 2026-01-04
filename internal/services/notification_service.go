@@ -30,6 +30,8 @@ func NewNotificationService(subRepo repository.SubscriptionRepository) Notificat
 	// Register built-in notifiers
 	s.RegisterNotifier(notification.NewWebhookNotifier())
 	s.RegisterNotifier(notification.NewEmailNotifier())
+	s.RegisterNotifier(notification.NewDiscordNotifier())
+	s.RegisterNotifier(notification.NewTelegramNotifier())
 	
 	return s
 }

@@ -15,6 +15,16 @@ interface PublicMonitor {
   last_status: string;
   last_checked_at: string;
   uptime_24h: number;
+  certificate_expiry?: string;
+}
+
+interface Incident {
+  id: number;
+  title: string;
+  status: string;
+  impact: string;
+  start_time: string;
+  created_at: string;
 }
 
 interface StatusResponse {
@@ -95,6 +105,15 @@ const MonitorIcon = ({ type }: { type: string }) => {
 };
 
 export default function StatusPage() {
+  const { data: incidents } = useQuery<Incident[]>({
+    queryKey: ['public_incidents'],
+    queryFn: async () => {
+      const res = await api.get('/public/incidents');
+      return res.data;
+    },
+    refetchInterval: 30000,
+  });
+
   const { data, isLoading } = useQuery<StatusResponse>({
     queryKey: ['public_status'],
     queryFn: async () => {
@@ -163,6 +182,46 @@ export default function StatusPage() {
           </Paper>
         </motion.div>
 
+        {/* Incidents Section */}
+        {incidents && incidents.length > 0 && (
+          <Box sx={{ mb: 6 }}>
+             <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
+              Active Incidents
+            </Typography>
+            <Stack spacing={2}>
+              {incidents.map((incident) => (
+                <Paper 
+                  key={incident.id}
+                  elevation={0}
+                  sx={{ 
+                    p: 3, 
+                    border: 1, 
+                    borderColor: 'warning.light', 
+                    bgcolor: '#fffbeb',
+                    borderRadius: 3 
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <AlertCircle size={20} className="text-amber-600" />
+                    <Typography variant="h6" fontWeight="bold" color="warning.dark">
+                      {incident.title}
+                    </Typography>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    Started at: {new Date(incident.start_time).toLocaleString()}
+                  </Typography>
+                  <Chip 
+                    label={incident.impact.toUpperCase()} 
+                    size="small" 
+                    color="warning" 
+                    sx={{ mt: 2, fontWeight: 'bold' }} 
+                  />
+                </Paper>
+              ))}
+            </Stack>
+          </Box>
+        )}
+
         {/* Monitors List */}
         <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
           System Metrics
@@ -203,6 +262,15 @@ export default function StatusPage() {
                     </Stack>
                     
                     <Stack direction="row" spacing={3} alignItems="center">
+                      {monitor.certificate_expiry && (
+                        <Chip 
+                          label={`SSL: ${new Date(monitor.certificate_expiry).toLocaleDateString()}`}
+                          size="small"
+                          variant="outlined"
+                          color={new Date(monitor.certificate_expiry) < new Date(Date.now() + 7*24*60*60*1000) ? 'warning' : 'default'}
+                        />
+                      )}
+
                       <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
                         <Typography variant="body2" color="text.secondary">
                           Uptime (24h)
@@ -237,6 +305,10 @@ export default function StatusPage() {
         <Box sx={{ mt: 8, textAlign: 'center', pb: 4 }}>
           <Typography variant="body2" color="text.secondary">
             Powered by <span style={{ fontWeight: 600, color: '#6366f1' }}>Uptime W33d</span> &copy; {new Date().getFullYear()}
+            {' • '}
+            <Link component={RouterLink} to="/login" color="inherit" underline="hover">
+              Admin Login
+            </Link>
           </Typography>
         </Box>
       </Container>

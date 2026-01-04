@@ -184,6 +184,13 @@ func (s *Scheduler) executeCheck(m models.Monitor) {
 	now := time.Now()
 	m.LastCheckedAt = &now
 	
+	// Update Certificate Expiry if available
+	if val, ok := result.Data["cert_expiry"]; ok {
+		if t, ok := val.(time.Time); ok {
+			m.CertificateExpiry = &t
+		}
+	}
+	
 	if err := s.monitorRepo.Update(&m); err != nil {
 		logger.Log.Error("Failed to update monitor status", zap.Error(err))
 	}

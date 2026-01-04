@@ -3,7 +3,7 @@ import {
   Box, Drawer, AppBar, Toolbar, List, Typography, 
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, IconButton, Stack
 } from '@mui/material';
-import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 const drawerWidth = 260;

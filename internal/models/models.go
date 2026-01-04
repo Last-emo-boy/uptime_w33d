@@ -49,6 +49,7 @@ type Monitor struct {
 	Group          *MonitorGroup  `json:"group,omitempty"`
 	LastStatus     string         `json:"last_status"` // "up", "down", "unknown"
 	LastCheckedAt  *time.Time     `json:"last_checked_at"`
+	CertificateExpiry *time.Time  `json:"certificate_expiry"` // SSL Expiry Date
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
@@ -81,7 +82,8 @@ const (
 
 type Incident struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	MonitorID uint           `gorm:"index;not null" json:"monitor_id"`
+	Title     string         `json:"title"`
+	MonitorID *uint          `gorm:"index" json:"monitor_id"` // Optional (system-wide vs monitor-specific)
 	Status    IncidentStatus `gorm:"not null" json:"status"`
 	StartTime time.Time      `gorm:"not null" json:"start_time"`
 	EndTime   *time.Time     `json:"end_time"`

@@ -21,17 +21,20 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/status" element={<StatusPage />} />
-            
-            <Route element={<DashboardLayout />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/monitors" element={<Monitors />} />
-              <Route path="/channels" element={<Channels />} />
-            </Route>
-          </Routes>
+          <SystemGuard>
+            <Routes>
+              <Route path="/setup" element={<Setup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<StatusPage />} />
+              
+              <Route element={<DashboardLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/monitors" element={<Monitors />} />
+                <Route path="/channels" element={<Channels />} />
+                <Route path="/incidents" element={<Incidents />} />
+              </Route>
+            </Routes>
+          </SystemGuard>
         </BrowserRouter>
         {/* <ReactQueryDevtools initialIsOpen={false} /> */}
       </ThemeProvider>

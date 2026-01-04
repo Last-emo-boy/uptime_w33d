@@ -11,6 +11,7 @@ import (
 type AuthService interface {
 	Register(username, password, email string) error
 	Login(username, password string) (string, error)
+	IsSetupRequired() (bool, error)
 }
 
 type authService struct {
@@ -42,7 +43,14 @@ func (s *authService) Register(username, password, email string) error {
 		Role:         models.RoleGuest, // Default role
 	}
 
-	// First user is admin (optional logic, skipping for simplicity)
+	// First user is admin
+	count, err := s.userRepo.Count()
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		user.Role = models.RoleAdmin
+	}
 
 	return s.userRepo.Create(user)
 }
@@ -66,4 +74,12 @@ func (s *authService) Login(username, password string) (string, error) {
 	}
 
 	return token, nil
+}
+
+func (s *authService) IsSetupRequired() (bool, error) {
+	count, err := s.userRepo.Count()
+	if err != nil {
+		return false, err
+	}
+	return count == 0, nil
 }
