@@ -29,9 +29,7 @@ A self-hosted uptime monitoring system with a modern status page.
 - Linux Server (Ubuntu/Debian recommended)
 - Docker & Docker Compose
 - Nginx (Host)
-- Domain names pointing to server IP:
-  - `status.w33d.xyz` (Frontend)
-  - `status-api.w33d.xyz` (Backend)
+- Domain names pointing to server IP
 
 ### Steps
 1. Clone repo on server.
@@ -40,6 +38,6 @@ A self-hosted uptime monitoring system with a modern status page.
 
 ### Environment Variables
 Set these in `docker-compose.yml` or `.env` file:
-- `VITE_API_URL`: `https://status-api.w33d.xyz` (For Frontend build)
+- `VITE_API_URL`: `https://xxx` (For Frontend build)
 - `JWT_SECRET`: Secure random string
 - `DB_PASSWORD`: Database password
