@@ -5,9 +5,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
+	
 	"uptime_w33d/internal/models"
 	"uptime_w33d/internal/services"
+	"uptime_w33d/pkg/cache"
 )
 
 type MonitorHandler struct {
@@ -29,6 +30,9 @@ func (h *MonitorHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	
+	// Invalidate Cache
+	_ = cache.Delete("public_status_page_default")
 
 	c.JSON(http.StatusCreated, monitor)
 }
@@ -85,6 +89,9 @@ func (h *MonitorHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Invalidate Cache
+	_ = cache.Delete("public_status_page_default")
+
 	c.JSON(http.StatusOK, gin.H{"message": "Monitor updated successfully"})
 }
 
@@ -100,6 +107,9 @@ func (h *MonitorHandler) Delete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Invalidate Cache
+	_ = cache.Delete("public_status_page_default")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Monitor deleted successfully"})
 }
