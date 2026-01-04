@@ -55,11 +55,7 @@ func main() {
 
 	// 3. Init Database
 	if err := repository.InitDB(cfg.Database); err != nil {
-		logger.Log.Error("Failed to connect to database", zap.Error(err))
-		// Continue only if not migrating, but usually we need DB
-		// For development, if DB fails, we can't do much.
-		// However, if the user doesn't have Postgres running, we exit.
-		// os.Exit(1) 
+		logger.Log.Fatal("Failed to connect to database", zap.Error(err))
 	} else {
 		logger.Log.Info("Database connected successfully")
 		
@@ -67,9 +63,7 @@ func main() {
 		// Always auto-migrate on startup to ensure schema consistency
 		logger.Log.Info("Running database migrations...")
 		if err := repository.Migrate(); err != nil {
-			logger.Log.Error("Failed to run migrations", zap.Error(err))
-			// Exit on migration failure in prod might be safer, but for now we log error
-			// os.Exit(1)
+			logger.Log.Fatal("Failed to run migrations", zap.Error(err))
 		} else {
 			logger.Log.Info("Migrations completed successfully")
 		}
