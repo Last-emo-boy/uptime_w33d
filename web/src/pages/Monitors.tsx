@@ -7,7 +7,7 @@ import api from '../lib/api';
 import { 
   Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, 
   Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, 
-  MenuItem, Stack, Box, Avatar
+  MenuItem, Stack, Box, Avatar, Switch, FormControlLabel
 } from '@mui/material';
 import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy, Gamepad2, Container, Shield } from 'lucide-react';
 
@@ -28,6 +28,7 @@ const monitorSchema = z.object({
   json_path: z.string().optional(),
   json_value: z.string().optional(),
   group_id: z.number().optional(),
+  enabled: z.boolean().default(true),
 });
 
 type MonitorForm = z.infer<typeof monitorSchema>;
@@ -144,6 +145,7 @@ export default function Monitors() {
       setValue('json_path', (monitor as any).json_path || '');
       setValue('json_value', (monitor as any).json_value || '');
       setValue('group_id', monitor.group_id);
+      setValue('enabled', monitor.enabled);
     } else {
       setEditingId(null);
       reset({
@@ -161,6 +163,7 @@ export default function Monitors() {
         json_path: '',
         json_value: '',
         group_id: undefined,
+        enabled: true,
       });
     }
     setOpen(true);
@@ -332,6 +335,23 @@ export default function Monitors() {
                     error={!!fieldState.error} 
                     helperText={fieldState.error?.message} 
                     placeholder="e.g. Production API"
+                  />
+                )}
+              />
+
+              <Controller
+                name="enabled"
+                control={control}
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label="Enabled"
                   />
                 )}
               />
