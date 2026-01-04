@@ -44,3 +44,10 @@ func Get(key string) (string, error) {
 	}
 	return Rdb.Get(context.Background(), key).Result()
 }
+
+func Delete(key string) error {
+	if Rdb == nil {
+		return nil
+	}
+	return Rdb.Del(context.Background(), key).Err()
+}
