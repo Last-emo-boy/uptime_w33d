@@ -2,10 +2,14 @@ package probe
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/tidwall/gjson"
 	"uptime_w33d/internal/models"
 )
 
@@ -35,13 +39,35 @@ func (p *HTTPProbe) Check(monitor models.Monitor) Result {
 		Transport: tr,
 	}
 
-	req, err := http.NewRequest("GET", monitor.Target, nil)
+	method := monitor.Method
+	if method == "" {
+		method = "GET"
+	}
+
+	var bodyReader *strings.Reader
+	if monitor.Body != "" {
+		bodyReader = strings.NewReader(monitor.Body)
+	} else {
+		bodyReader = strings.NewReader("")
+	}
+
+	req, err := http.NewRequest(method, monitor.Target, bodyReader)
 	if err != nil {
 		return p.RecordResult(false, fmt.Sprintf("invalid URL: %v", err), 0)
 	}
 	
 	// Add User-Agent
 	req.Header.Set("User-Agent", "UptimeW33d/1.0")
+
+	// Add Custom Headers
+	if monitor.Headers != "" {
+		var headers map[string]string
+		if err := json.Unmarshal([]byte(monitor.Headers), &headers); err == nil {
+			for k, v := range headers {
+				req.Header.Set(k, v)
+			}
+		}
+	}
 
 	resp, err := client.Do(req)
 	duration := time.Since(start)
@@ -50,6 +76,13 @@ func (p *HTTPProbe) Check(monitor models.Monitor) Result {
 		return p.RecordResult(false, fmt.Sprintf("request failed: %v", err), duration)
 	}
 	defer resp.Body.Close()
+	
+	// Read Body for Advanced Checks (Keyword/JSON)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return p.RecordResult(false, fmt.Sprintf("failed to read body: %v", err), duration)
+	}
+	bodyStr := string(bodyBytes)
 
 	// Check Status Code
 	success := false
@@ -73,6 +106,33 @@ func (p *HTTPProbe) Check(monitor models.Monitor) Result {
 	msg := fmt.Sprintf("HTTP %d %s", resp.StatusCode, resp.Status)
 	if !success {
 		msg = fmt.Sprintf("Unexpected status: %d (expected %s)", resp.StatusCode, expected)
+	}
+
+	// --- Advanced Checks ---
+	if success {
+		// Keyword Check
+		if monitor.Type == models.TypeHTTPKeyword && monitor.Keyword != "" {
+			if !strings.Contains(bodyStr, monitor.Keyword) {
+				success = false
+				msg = fmt.Sprintf("Keyword '%s' not found", monitor.Keyword)
+			}
+		}
+
+		// JSON Query Check
+		if monitor.Type == models.TypeHTTPJson && monitor.JSONPath != "" {
+			// Using GJSON for fast path retrieval
+			res := gjson.Get(bodyStr, monitor.JSONPath)
+			if !res.Exists() {
+				success = false
+				msg = fmt.Sprintf("JSON Path '%s' not found", monitor.JSONPath)
+			} else {
+				// Compare Value (String comparison for now)
+				if monitor.JSONValue != "" && res.String() != monitor.JSONValue {
+					success = false
+					msg = fmt.Sprintf("JSON Value mismatch: expected '%s', got '%s'", monitor.JSONValue, res.String())
+				}
+			}
+		}
 	}
 
 	res := p.RecordResult(success, msg, duration)

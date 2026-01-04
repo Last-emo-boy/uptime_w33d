@@ -27,11 +27,16 @@ type User struct {
 type MonitorType string
 
 const (
-	TypeHTTP MonitorType = "http"
-	TypeTCP  MonitorType = "tcp"
-	TypePing MonitorType = "ping"
-	TypeDNS  MonitorType = "dns"
-	TypePush MonitorType = "push"
+	TypeHTTP      MonitorType = "http"
+	TypeHTTPKeyword MonitorType = "http_keyword"
+	TypeHTTPJson    MonitorType = "http_json"
+	TypeTCP       MonitorType = "tcp"
+	TypeWS        MonitorType = "ws"
+	TypePing      MonitorType = "ping"
+	TypeDNS       MonitorType = "dns"
+	TypePush      MonitorType = "push"
+	TypeSteam     MonitorType = "steam"
+	TypeDocker    MonitorType = "docker"
 )
 
 type Monitor struct {
@@ -42,6 +47,13 @@ type Monitor struct {
 	PushToken      string         `gorm:"index" json:"push_token,omitempty"` // For Push monitors
 	Interval       int            `gorm:"default:60" json:"interval"`      // Seconds (Expected heartbeat interval)
 	Timeout        int            `gorm:"default:10" json:"timeout"`       // Seconds
+	MaxRetries     int            `gorm:"default:1" json:"max_retries"`    // New: Retries before marking down
+	Method         string         `gorm:"default:'GET'" json:"method"`     // GET, POST, etc.
+	Headers        string         `gorm:"type:text" json:"headers"`        // JSON string
+	Body           string         `gorm:"type:text" json:"body"`           // Request body
+	Keyword        string         `json:"keyword"`                         // For TypeHTTPKeyword
+	JSONPath       string         `json:"json_path"`                       // For TypeHTTPJson (e.g. "status")
+	JSONValue      string         `json:"json_value"`                      // Expected value for JSONPath
 	ExpectedStatus string         `json:"expected_status"`                 // e.g. "200", "2xx"
 	IsPublic       bool           `gorm:"default:false" json:"is_public"`
 	Enabled        bool           `gorm:"default:true" json:"enabled"`
@@ -106,4 +118,20 @@ type NotificationChannel struct {
 type Subscription struct {
 	MonitorID uint `gorm:"primaryKey" json:"monitor_id"`
 	ChannelID uint `gorm:"primaryKey" json:"channel_id"`
+}
+
+type StatusPage struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	Slug        string         `gorm:"uniqueIndex;not null" json:"slug"` // URL path: /status/:slug
+	Title       string         `gorm:"not null" json:"title"`
+	Description string         `json:"description"`
+	Theme       string         `gorm:"default:'light'" json:"theme"` // light, dark
+	CustomCSS   string         `gorm:"type:text" json:"custom_css"`
+	Domain      string         `gorm:"index" json:"domain"`          // Custom Domain mapping
+	Password    string         `json:"-"`                            // Optional password protection
+	Public      bool           `gorm:"default:true" json:"public"`
+	Monitors    []Monitor      `gorm:"many2many:status_page_monitors;" json:"monitors"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }

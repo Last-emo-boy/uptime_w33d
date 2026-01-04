@@ -13,5 +13,6 @@ func Migrate() error {
 		&models.Incident{},
 		&models.NotificationChannel{},
 		&models.Subscription{},
+		&models.StatusPage{},
 	)
 }

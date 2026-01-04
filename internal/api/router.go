@@ -48,7 +48,9 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	pushHandler := handlers.NewPushHandler(pushService)
 
 	// Status Page
-	statusHandler := handlers.NewStatusPageHandler(monitorRepo, resultRepo)
+	statusRepo := repository.NewStatusPageRepository(db)
+	statusSvc := services.NewStatusPageService(statusRepo, monitorRepo)
+	statusHandler := handlers.NewStatusPageHandler(statusSvc, monitorRepo, resultRepo)
 
 	// Incident Management
 	incidentRepo := repository.NewIncidentRepository(db)
@@ -66,7 +68,8 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		}
 
 		// Public Status Page
-		api.GET("/public/status", statusHandler.GetStatus)
+		api.GET("/public/status", statusHandler.GetStatus)       // Default
+		api.GET("/public/status/:slug", statusHandler.GetStatus) // Named
 		api.GET("/public/monitors/:id/history", statusHandler.GetMonitorHistory)
 		api.GET("/public/incidents", incidentHandler.ListActive) // Public incidents
 
@@ -90,6 +93,15 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 					"message": "You are authenticated",
 				})
 			})
+
+			// Status Page Management
+			pages := protected.Group("/status-pages")
+			{
+				pages.GET("", statusHandler.List)
+				pages.POST("", statusHandler.Create)
+				pages.PUT("/:id", statusHandler.Update)
+				pages.DELETE("/:id", statusHandler.Delete)
+			}
 
 			// Monitor Routes
 			monitors := protected.Group("/monitors")

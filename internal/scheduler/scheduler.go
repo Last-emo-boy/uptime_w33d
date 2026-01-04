@@ -32,8 +32,17 @@ func NewScheduler(monitorRepo repository.MonitorRepository, resultRepo repositor
 	}
 
 	// Register Probes
-	s.RegisterProbe(probe.NewHTTPProbe())
+	httpProbe := probe.NewHTTPProbe()
+	s.RegisterProbe(httpProbe) // TypeHTTP
+	
+	// Register HTTP Keyword/JSON as aliases to HTTP Probe (handled internally)
+	s.probes[models.TypeHTTPKeyword] = httpProbe
+	s.probes[models.TypeHTTPJson] = httpProbe
+
 	s.RegisterProbe(probe.NewTCPProbe())
+	s.RegisterProbe(probe.NewWSProbe())
+	s.RegisterProbe(probe.NewSteamProbe())
+	s.RegisterProbe(probe.NewDockerProbe())
 	s.RegisterProbe(probe.NewPingProbe())
 	s.RegisterProbe(probe.NewDNSProbe())
 
@@ -142,8 +151,32 @@ func (s *Scheduler) executeCheck(m models.Monitor) {
 
 	logger.Log.Debug("Executing check", zap.String("monitor", m.Name), zap.String("target", m.Target))
 	
-	// Execute Probe
-	result := p.Check(m)
+	// Execute Probe with Retry Logic
+	var result probe.Result
+	
+	// Default to 0 retries if not set (or negative)
+	maxRetries := m.MaxRetries
+	if maxRetries < 0 {
+		maxRetries = 0
+	}
+
+	for i := 0; i <= maxRetries; i++ {
+		result = p.Check(m)
+		if result.Success {
+			break
+		}
+		
+		// If failed and we have retries left, wait a bit and retry
+		if i < maxRetries {
+			logger.Log.Warn("Probe failed, retrying...", 
+				zap.String("monitor", m.Name),
+				zap.Int("attempt", i+1),
+				zap.Int("max_retries", maxRetries),
+				zap.String("error", result.Message),
+			)
+			time.Sleep(2 * time.Second) // Simple 2s backoff
+		}
+	}
 
 	// Determine Status
 	status := "up"

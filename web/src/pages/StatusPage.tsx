@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import { 
   Typography, Paper, Container, Box, Chip, Stack, LinearProgress,
   Accordion, AccordionSummary, AccordionDetails, Link
 } from '@mui/material';
-import { CheckCircle, XCircle, AlertCircle, ChevronDown, Activity, Globe, Server, Radio } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, ChevronDown, Activity, Globe, Server, Radio, Gamepad2, Container as ContainerIcon } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -28,9 +28,19 @@ interface Incident {
   created_at: string;
 }
 
+interface StatusPageConfig {
+  id: number;
+  title: string;
+  description: string;
+  theme: string;
+  custom_css: string;
+  slug: string;
+}
+
 interface StatusResponse {
   system_status: string;
   monitors: PublicMonitor[];
+  config?: StatusPageConfig;
 }
 
 interface HistoryPoint {
@@ -98,14 +108,22 @@ const MonitorHistoryChart = ({ monitorId }: { monitorId: number }) => {
 const MonitorIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'http': return <Globe size={20} className="text-blue-500" />;
+    case 'http_keyword': return <Globe size={20} className="text-blue-500" />;
+    case 'http_json': return <Globe size={20} className="text-blue-500" />;
     case 'tcp': return <Server size={20} className="text-purple-500" />;
     case 'ping': return <Activity size={20} className="text-green-500" />;
     case 'push': return <Radio size={20} className="text-pink-500" />;
+    case 'ws': return <Activity size={20} className="text-cyan-500" />;
+    case 'steam': return <Gamepad2 size={20} className="text-indigo-500" />;
+    case 'docker': return <ContainerIcon size={20} className="text-sky-600" />;
     default: return <Activity size={20} />;
   }
 };
 
 export default function StatusPage() {
+  const { slug } = useParams<{ slug?: string }>();
+  // const theme = useTheme();
+
   const { data: incidents } = useQuery<Incident[]>({
     queryKey: ['public_incidents'],
     queryFn: async () => {
@@ -116,9 +134,10 @@ export default function StatusPage() {
   });
 
   const { data, isLoading } = useQuery<StatusResponse>({
-    queryKey: ['public_status'],
+    queryKey: ['public_status', slug],
     queryFn: async () => {
-      const res = await api.get('/public/status');
+      const url = slug ? `/public/status/${slug}` : '/public/status';
+      const res = await api.get(url);
       return res.data;
     },
     refetchInterval: 30000,
@@ -136,15 +155,23 @@ export default function StatusPage() {
 
   const isOperational = overallStatus === 'All Systems Operational';
 
+  const pageTitle = data?.config?.title || 'Uptime W33d';
+  const pageDesc = data?.config?.description || (isOperational ? 'Everything is running smoothly.' : 'We are currently experiencing issues.');
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
+      {/* Custom CSS Injection */}
+      {data?.config?.custom_css && (
+        <style dangerouslySetInnerHTML={{ __html: data.config.custom_css }} />
+      )}
+
       {/* Navbar Placeholder */}
       <Box sx={{ bgcolor: 'white', borderBottom: 1, borderColor: 'divider', py: 2, mb: 6 }}>
         <Container maxWidth="md">
           <Stack direction="row" alignItems="center" spacing={2}>
             <Activity size={32} className="text-indigo-600" />
             <Typography variant="h5" fontWeight="bold" color="text.primary">
-              Uptime W33d
+              {pageTitle}
             </Typography>
           </Stack>
         </Container>
@@ -176,7 +203,7 @@ export default function StatusPage() {
                 {overallStatus}
               </Typography>
               <Typography variant="subtitle1" sx={{ opacity: 0.9 }}>
-                {isOperational ? 'Everything is running smoothly.' : 'We are currently experiencing issues.'}
+                {pageDesc}
               </Typography>
             </Box>
             {isOperational ? <CheckCircle size={64} opacity={0.8} /> : <AlertCircle size={64} opacity={0.8} />}

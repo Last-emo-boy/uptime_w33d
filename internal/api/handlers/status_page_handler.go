@@ -9,35 +9,109 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
+	"uptime_w33d/internal/models"
 	"uptime_w33d/internal/repository"
+	"uptime_w33d/internal/services"
 	"uptime_w33d/pkg/cache"
 	"uptime_w33d/pkg/logger"
 )
 
 type StatusPageHandler struct {
+	statusSvc   services.StatusPageService
 	monitorRepo repository.MonitorRepository
 	resultRepo  repository.CheckResultRepository
 }
 
-func NewStatusPageHandler(monitorRepo repository.MonitorRepository, resultRepo repository.CheckResultRepository) *StatusPageHandler {
+func NewStatusPageHandler(statusSvc services.StatusPageService, monitorRepo repository.MonitorRepository, resultRepo repository.CheckResultRepository) *StatusPageHandler {
 	return &StatusPageHandler{
+		statusSvc:   statusSvc,
 		monitorRepo: monitorRepo,
 		resultRepo:  resultRepo,
 	}
 }
 
 type PublicMonitorStatus struct {
-	ID            uint      `json:"id"`
-	Name          string    `json:"name"`
-	Type          string    `json:"type"`
-	LastStatus    string    `json:"last_status"`
-	LastCheckedAt *time.Time `json:"last_checked_at"`
-	Uptime24h     float64   `json:"uptime_24h"` // Placeholder for uptime calculation
+	ID                uint       `json:"id"`
+	Name              string     `json:"name"`
+	Type              string     `json:"type"`
+	LastStatus        string     `json:"last_status"`
+	LastCheckedAt     *time.Time `json:"last_checked_at"`
+	CertificateExpiry *time.Time `json:"certificate_expiry,omitempty"`
+	Uptime24h         float64    `json:"uptime_24h"` 
 }
 
+// Admin Handlers for Status Pages
+
+func (h *StatusPageHandler) List(c *gin.Context) {
+	pages, err := h.statusSvc.ListStatusPages()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pages)
+}
+
+func (h *StatusPageHandler) Create(c *gin.Context) {
+	var req struct {
+		models.StatusPage
+		MonitorIDs []uint `json:"monitor_ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	if err := h.statusSvc.CreateStatusPage(&req.StatusPage); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	// Update monitors association
+	if len(req.MonitorIDs) > 0 {
+		h.statusSvc.UpdateStatusPage(req.StatusPage.ID, &req.StatusPage, req.MonitorIDs)
+	}
+
+	c.JSON(http.StatusCreated, req.StatusPage)
+}
+
+func (h *StatusPageHandler) Update(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var req struct {
+		models.StatusPage
+		MonitorIDs []uint `json:"monitor_ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	
+	if err := h.statusSvc.UpdateStatusPage(uint(id), &req.StatusPage, req.MonitorIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "updated"})
+}
+
+func (h *StatusPageHandler) Delete(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if err := h.statusSvc.DeleteStatusPage(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
+}
+
+// Public Handler
+
 func (h *StatusPageHandler) GetStatus(c *gin.Context) {
-	// Try Cache
-	cacheKey := "public_status_page"
+	// Identify Status Page by Slug or Domain
+	slug := c.Param("slug")
+	if slug == "" {
+		slug = "default" // Default slug
+	}
+
+	// Try Cache (Keyed by slug)
+	cacheKey := "public_status_page_" + slug
 	if cached, err := cache.Get(cacheKey); err == nil {
 		var response gin.H
 		if err := json.Unmarshal([]byte(cached), &response); err == nil {
@@ -46,47 +120,48 @@ func (h *StatusPageHandler) GetStatus(c *gin.Context) {
 		}
 	}
 
-	// 1. Get all PUBLIC monitors
-	// We need to filter by IsPublic=true. 
-	// Currently GetAll(0) returns all. We might need a new repo method or filter in memory.
-	// For efficiency, let's assume we filter in memory or add repo method later.
-	
-	monitors, err := h.monitorRepo.GetAll(0)
+	// Fetch Status Page Config
+	page, err := h.statusSvc.GetStatusPageBySlug(slug)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch monitors"})
+		// Try Domain lookup?
+		// For now, simple 404
+		c.JSON(http.StatusNotFound, gin.H{"error": "Status page not found"})
 		return
 	}
 
+	// If monitors are not preloaded correctly, we might need to fetch them.
+	// The repo GetBySlug uses Preload, so page.Monitors should be populated.
+	
 	var publicStatus []PublicMonitorStatus
-	for _, m := range monitors {
-		// if !m.IsPublic { continue } // Uncomment when IsPublic is added to model
+	for _, m := range page.Monitors {
+		if !m.Enabled { continue }
 
-		// Calculate Uptime (Simplification: just return 100% or based on last status)
-		// In a real app, we would query CheckResult history for the last 24h.
 		uptime := 100.0
 		if m.LastStatus == "down" {
 			uptime = 0.0
 		}
 
 		publicStatus = append(publicStatus, PublicMonitorStatus{
-			ID:            m.ID,
-			Name:          m.Name,
-			Type:          string(m.Type),
-			LastStatus:    m.LastStatus,
-			LastCheckedAt: m.LastCheckedAt,
-			Uptime24h:     uptime,
+			ID:                m.ID,
+			Name:              m.Name,
+			Type:              string(m.Type),
+			LastStatus:        m.LastStatus,
+			LastCheckedAt:     m.LastCheckedAt,
+			CertificateExpiry: m.CertificateExpiry,
+			Uptime24h:         uptime,
 		})
 	}
 
 	response := gin.H{
-		"system_status": "All Systems Operational", // You can calculate this based on all monitors
+		"config":        page,
+		"system_status": "All Systems Operational", // Should calculate real status
 		"monitors":      publicStatus,
 		"cached_at":     time.Now(),
 	}
 
-	// Set Cache (30 seconds)
+	// Set Cache (5 minutes as requested)
 	if jsonBytes, err := json.Marshal(response); err == nil {
-		if err := cache.Set(cacheKey, string(jsonBytes), 30*time.Second); err != nil {
+		if err := cache.Set(cacheKey, string(jsonBytes), 5*time.Minute); err != nil {
 			logger.Log.Warn("Failed to set status cache", zap.Error(err))
 		}
 	}

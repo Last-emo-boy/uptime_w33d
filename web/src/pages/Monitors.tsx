@@ -9,17 +9,24 @@ import {
   Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, 
   MenuItem, Stack, Box, Avatar
 } from '@mui/material';
-import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy } from 'lucide-react';
+import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy, Gamepad2, Container } from 'lucide-react';
 
 // --- Types & Schema ---
 
 const monitorSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  type: z.enum(['http', 'tcp', 'ping', 'dns', 'push']),
+  type: z.enum(['http', 'http_keyword', 'http_json', 'tcp', 'ws', 'steam', 'docker', 'ping', 'dns', 'push']),
   target: z.string().optional(),
   interval: z.coerce.number().min(10, 'Minimum interval is 10s'),
   timeout: z.coerce.number().min(1),
+  max_retries: z.coerce.number().min(0).default(1),
   expected_status: z.string().optional(),
+  method: z.string().optional(),
+  headers: z.string().optional(),
+  body: z.string().optional(),
+  keyword: z.string().optional(),
+  json_path: z.string().optional(),
+  json_value: z.string().optional(),
 });
 
 type MonitorForm = z.infer<typeof monitorSchema>;
@@ -34,6 +41,11 @@ interface Monitor extends MonitorForm {
 const MonitorIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'http': return <Globe size={18} />;
+    case 'http_keyword': return <Globe size={18} />;
+    case 'http_json': return <Globe size={18} />;
+     case 'ws': return <Activity size={18} />;
+    case 'steam': return <Gamepad2 size={18} />;
+    case 'docker': return <Container size={18} />;
     case 'tcp': return <Server size={18} />;
     case 'ping': return <Activity size={18} />;
     case 'push': return <Radio size={18} />;
@@ -85,7 +97,14 @@ export default function Monitors() {
       target: '',
       interval: 60,
       timeout: 10,
+      max_retries: 1,
       expected_status: '200',
+      method: 'GET',
+      headers: '',
+      body: '',
+      keyword: '',
+      json_path: '',
+      json_value: '',
     },
   });
 
@@ -99,7 +118,14 @@ export default function Monitors() {
       setValue('target', monitor.target);
       setValue('interval', monitor.interval);
       setValue('timeout', monitor.timeout);
+      setValue('max_retries', (monitor as any).max_retries ?? 1);
       setValue('expected_status', monitor.expected_status || '');
+      setValue('method', (monitor as any).method || 'GET');
+      setValue('headers', (monitor as any).headers || '');
+      setValue('body', (monitor as any).body || '');
+      setValue('keyword', (monitor as any).keyword || '');
+      setValue('json_path', (monitor as any).json_path || '');
+      setValue('json_value', (monitor as any).json_value || '');
     } else {
       setEditingId(null);
       reset({
@@ -108,7 +134,14 @@ export default function Monitors() {
         target: '',
         interval: 60,
         timeout: 10,
+        max_retries: 1,
         expected_status: '200',
+        method: 'GET',
+        headers: '',
+        body: '',
+        keyword: '',
+        json_path: '',
+        json_value: '',
       });
     }
     setOpen(true);
@@ -259,6 +292,11 @@ export default function Monitors() {
                 render={({ field }) => (
                   <TextField {...field} select label="Monitor Type" fullWidth>
                     <MenuItem value="http">HTTP(s) - Website / API</MenuItem>
+                    <MenuItem value="http_keyword">HTTP(s) - Keyword Check</MenuItem>
+                    <MenuItem value="http_json">HTTP(s) - JSON Query</MenuItem>
+                    <MenuItem value="ws">WebSocket (ws/wss)</MenuItem>
+                    <MenuItem value="steam">Steam Game Server</MenuItem>
+                    <MenuItem value="docker">Docker Container</MenuItem>
                     <MenuItem value="tcp">TCP - Port Check</MenuItem>
                     <MenuItem value="ping">Ping - Server Reachability</MenuItem>
                     <MenuItem value="dns">DNS - Resolve Check</MenuItem>
@@ -273,16 +311,130 @@ export default function Monitors() {
                  render={({ field, fieldState }) => (
                    <TextField 
                      {...field} 
-                     label={type === 'http' ? 'URL' : 'Hostname / IP'} 
-                     placeholder={type === 'http' ? 'https://example.com' : '1.1.1.1'}
+                     label={type === 'http' || type === 'http_keyword' || type === 'http_json' ? 'URL' : type === 'ws' ? 'WebSocket URL' : type === 'docker' ? 'Docker Host' : 'Hostname / IP'} 
+                     placeholder={type === 'http' || type === 'http_keyword' || type === 'http_json' ? 'https://example.com' : type === 'ws' ? 'wss://echo.websocket.org' : type === 'docker' ? 'local' : '1.1.1.1'}
                      fullWidth 
                      error={!!fieldState.error} 
-                     helperText={fieldState.error?.message} 
+                     helperText={type === 'docker' ? 'Use "local" for local socket or "tcp://host:port" for remote' : fieldState.error?.message}
                    />
                  )}
                />
               )}
              
+              {type === 'http_keyword' && (
+                <Controller
+                  name="keyword"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField 
+                      {...field} 
+                      label="Keyword to Find" 
+                      placeholder="e.g. System Operational" 
+                      fullWidth 
+                      helperText="Monitor will be DOWN if this keyword is missing from response body"
+                    />
+                  )}
+                />
+              )}
+
+              {type === 'http_json' && (
+                <Stack spacing={2}>
+                  <Controller
+                    name="json_path"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField 
+                        {...field} 
+                        label="JSON Path (GJSON syntax)" 
+                        placeholder="e.g. data.status" 
+                        fullWidth 
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="json_value"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField 
+                        {...field} 
+                        label="Expected Value" 
+                        placeholder="e.g. active" 
+                        fullWidth 
+                      />
+                    )}
+                  />
+                </Stack>
+              )}
+              
+              {(type === 'http' || type === 'http_keyword' || type === 'http_json') && (
+                <Stack spacing={2}>
+                   <Stack direction="row" spacing={2}>
+                    <Controller
+                      name="method"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField 
+                          {...field} 
+                          select 
+                          label="Method" 
+                          sx={{ minWidth: 100 }}
+                        >
+                          <MenuItem value="GET">GET</MenuItem>
+                          <MenuItem value="POST">POST</MenuItem>
+                          <MenuItem value="PUT">PUT</MenuItem>
+                          <MenuItem value="PATCH">PATCH</MenuItem>
+                          <MenuItem value="DELETE">DELETE</MenuItem>
+                          <MenuItem value="HEAD">HEAD</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="expected_status"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField 
+                          {...field} 
+                          label="Expected Status Code" 
+                          placeholder="200" 
+                          helperText="Leave empty for 2xx" 
+                          fullWidth 
+                        />
+                      )}
+                    />
+                  </Stack>
+                  
+                  <Controller
+                    name="headers"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField 
+                        {...field} 
+                        label="Custom Headers (JSON)" 
+                        placeholder='{"Authorization": "Bearer token"}' 
+                        fullWidth 
+                        multiline
+                        minRows={2}
+                      />
+                    )}
+                  />
+
+                  <Controller
+                    name="body"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField 
+                        {...field} 
+                        label="Request Body" 
+                        placeholder='{"key": "value"}' 
+                        fullWidth 
+                        multiline
+                        minRows={2}
+                      />
+                    )}
+                  />
+                </Stack>
+              )}
+
               <Stack direction="row" spacing={2}>
                 <Controller
                   name="interval"
@@ -312,23 +464,21 @@ export default function Monitors() {
                     />
                   )}
                 />
-              </Stack>
-
-              {type === 'http' && (
-                <Controller
-                  name="expected_status"
+                 <Controller
+                  name="max_retries"
                   control={control}
-                  render={({ field }) => (
+                  render={({ field, fieldState }) => (
                     <TextField 
                       {...field} 
-                      label="Expected Status Code" 
-                      placeholder="200" 
-                      helperText="Leave empty for 2xx" 
+                      type="number" 
+                      label="Max Retries" 
                       fullWidth 
+                      error={!!fieldState.error} 
+                      helperText={fieldState.error?.message || "Retries on failure before alert"} 
                     />
                   )}
                 />
-              )}
+              </Stack>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>

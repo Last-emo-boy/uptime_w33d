@@ -15,6 +15,7 @@ import Monitors from './pages/Monitors';
 import Channels from './pages/Channels';
 import Incidents from './pages/Incidents';
 import StatusPage from './pages/StatusPage';
+import StatusPages from './pages/StatusPages';
 
 const queryClient = new QueryClient();
 
@@ -29,10 +30,12 @@ function App() {
               <Route path="/setup" element={<Setup />} />
               <Route path="/login" element={<Login />} />
               <Route path="/" element={<StatusPage />} />
+              <Route path="/status/:slug" element={<StatusPage />} />
               
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/monitors" element={<Monitors />} />
+                <Route path="/status-pages" element={<StatusPages />} />
                 <Route path="/channels" element={<Channels />} />
                 <Route path="/incidents" element={<Incidents />} />
               </Route>

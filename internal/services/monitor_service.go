@@ -57,6 +57,13 @@ func (s *monitorService) UpdateMonitor(id uint, updates *models.Monitor) error {
 	existing.Target = updates.Target
 	existing.Interval = updates.Interval
 	existing.Timeout = updates.Timeout
+	existing.MaxRetries = updates.MaxRetries
+	existing.Method = updates.Method
+	existing.Headers = updates.Headers
+	existing.Body = updates.Body
+	existing.Keyword = updates.Keyword
+	existing.JSONPath = updates.JSONPath
+	existing.JSONValue = updates.JSONValue
 	existing.ExpectedStatus = updates.ExpectedStatus
 	existing.IsPublic = updates.IsPublic
 	existing.Enabled = updates.Enabled
