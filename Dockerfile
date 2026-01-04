@@ -39,5 +39,11 @@ COPY --from=builder /app/configs ./configs
 # Expose port
 EXPOSE 8080
 
+# Environment variables
+ENV DATABASE_HOST=db
+ENV DATABASE_PORT=5432
+ENV REDIS_HOST=redis
+ENV REDIS_PORT=6379
+
 # Command to run
 CMD ["./server"]
