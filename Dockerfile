@@ -1,5 +1,5 @@
 # Build Stage
-FROM golang:1.24-alpine AS builder
+FROM m.daocloud.io/docker.io/library/golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
 
 # Run Stage
-FROM alpine:latest
+FROM m.daocloud.io/docker.io/library/alpine:latest
 
 WORKDIR /app
 

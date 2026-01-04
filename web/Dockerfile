@@ -1,5 +1,5 @@
 # Build Stage
-FROM node:18-alpine AS builder
+FROM m.daocloud.io/docker.io/library/node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Run Stage
-FROM nginx:alpine
+FROM m.daocloud.io/docker.io/library/nginx:alpine
 
 # Copy build artifacts
 COPY --from=builder /app/dist /usr/share/nginx/html

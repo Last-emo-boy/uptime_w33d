@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15-alpine
+    image: m.daocloud.io/docker.io/library/postgres:15-alpine
     container_name: uptime_db
     restart: always
     environment:
@@ -15,7 +15,7 @@ services:
       - "127.0.0.1:5432:5432"
 
   redis:
-    image: redis:7-alpine
+    image: m.daocloud.io/docker.io/library/redis:7-alpine
     container_name: uptime_redis
     restart: always
     ports:
