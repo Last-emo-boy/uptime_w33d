@@ -143,24 +143,26 @@ func (h *StatusPageHandler) GetStatus(c *gin.Context) {
 	// If monitors are not preloaded correctly, we might need to fetch them.
 	// The repo GetBySlug uses Preload, so page.Monitors should be populated.
 	
-	var publicStatus []PublicMonitorStatus
-	for _, m := range page.Monitors {
-		if !m.Enabled { continue }
-
-		uptime := 100.0
-		if m.LastStatus == "down" {
-			uptime = 0.0
+	publicStatus := make([]PublicMonitorStatus, 0)
+	if page.Monitors != nil {
+		for _, m := range page.Monitors {
+			if !m.Enabled { continue }
+	
+			uptime := 100.0
+			if m.LastStatus == "down" {
+				uptime = 0.0
+			}
+	
+			publicStatus = append(publicStatus, PublicMonitorStatus{
+				ID:                m.ID,
+				Name:              m.Name,
+				Type:              string(m.Type),
+				LastStatus:        m.LastStatus,
+				LastCheckedAt:     m.LastCheckedAt,
+				CertificateExpiry: m.CertificateExpiry,
+				Uptime24h:         uptime,
+			})
 		}
-
-		publicStatus = append(publicStatus, PublicMonitorStatus{
-			ID:                m.ID,
-			Name:              m.Name,
-			Type:              string(m.Type),
-			LastStatus:        m.LastStatus,
-			LastCheckedAt:     m.LastCheckedAt,
-			CertificateExpiry: m.CertificateExpiry,
-			Uptime24h:         uptime,
-		})
 	}
 
 	response := gin.H{
