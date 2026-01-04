@@ -122,9 +122,20 @@ func (h *StatusPageHandler) GetStatus(c *gin.Context) {
 
 	// Fetch Status Page Config
 	page, err := h.statusSvc.GetStatusPageBySlug(slug)
-	if err != nil {
-		// Try Domain lookup?
-		// For now, simple 404
+	
+	// Fallback: If slug is "default" and not found, create a temporary default view with all monitors
+	if err != nil && slug == "default" {
+		allMonitors, _ := h.monitorRepo.GetAll(0)
+		// Filter enabled? 
+		// Create a dummy page config
+		page = &models.StatusPage{
+			Title:       "Uptime W33d Status",
+			Description: "System Status",
+			Slug:        "default",
+			Theme:       "light",
+			Monitors:    allMonitors,
+		}
+	} else if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Status page not found"})
 		return
 	}

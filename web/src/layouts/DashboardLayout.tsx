@@ -3,7 +3,7 @@ import {
   Box, Drawer, AppBar, Toolbar, List, Typography, 
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, IconButton, Stack
 } from '@mui/material';
-import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle, Globe } from 'lucide-react';
 import { useState } from 'react';
 
 const drawerWidth = 260;
@@ -24,25 +24,26 @@ export default function DashboardLayout() {
   const menuItems = [
     { text: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
     { text: 'Monitors', icon: <Activity size={20} />, path: '/monitors' },
+    { text: 'Status Pages', icon: <Globe size={20} />, path: '/status-pages' },
     { text: 'Channels', icon: <Bell size={20} />, path: '/channels' },
     { text: 'Incidents', icon: <AlertTriangle size={20} />, path: '/incidents' },
   ];
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
-      <Toolbar sx={{ px: 3, mb: 2 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: '#0f172a', color: 'white' }}>
+      <Toolbar sx={{ px: 3, mb: 4, mt: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box sx={{ p: 0.5, bgcolor: 'primary.main', borderRadius: 1.5, display: 'flex' }}>
+          <Box sx={{ p: 0.5, bgcolor: 'primary.main', borderRadius: 1.5, display: 'flex', boxShadow: '0 0 15px rgba(99, 102, 241, 0.5)' }}>
             <Activity size={24} color="white" />
           </Box>
-          <Typography variant="h6" fontWeight="bold" color="text.primary">
+          <Typography variant="h6" fontWeight="bold" sx={{ color: 'white', letterSpacing: 0.5 }}>
             Uptime W33d
           </Typography>
         </Stack>
       </Toolbar>
       
       <Box sx={{ px: 2, flexGrow: 1 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight="bold" sx={{ px: 2, mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Typography variant="caption" sx={{ px: 2, mb: 1, display: 'block', textTransform: 'uppercase', letterSpacing: 1, color: '#64748b', fontWeight: 700, fontSize: '0.7rem' }}>
           Menu
         </Typography>
         <List>
@@ -57,12 +58,19 @@ export default function DashboardLayout() {
                   sx={{
                     borderRadius: 2,
                     py: 1.2,
-                    color: isSelected ? 'primary.main' : 'text.secondary',
-                    bgcolor: isSelected ? 'primary.light' : 'transparent',
+                    color: isSelected ? 'white' : '#94a3b8',
+                    bgcolor: isSelected ? 'primary.main' : 'transparent',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      bgcolor: isSelected ? 'primary.main' : 'rgba(255, 255, 255, 0.05)',
+                      color: 'white',
+                      transform: 'translateX(4px)',
+                    },
                     '&.Mui-selected': {
-                      bgcolor: 'rgba(99, 102, 241, 0.08)',
+                      bgcolor: 'primary.main',
+                      boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
                       '&:hover': {
-                        bgcolor: 'rgba(99, 102, 241, 0.12)',
+                        bgcolor: 'primary.main',
                       },
                     },
                   }}
@@ -83,12 +91,12 @@ export default function DashboardLayout() {
       </Box>
 
       <Box sx={{ p: 2 }}>
-        <Box sx={{ p: 2, bgcolor: 'white', borderRadius: 2, border: 1, borderColor: 'divider', mb: 2 }}>
+        <Box sx={{ p: 2, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: 1, borderColor: 'rgba(255,255,255,0.1)', mb: 2 }}>
           <Stack direction="row" alignItems="center" spacing={2}>
-            <Avatar sx={{ width: 36, height: 36, bgcolor: 'secondary.main', fontSize: '0.9rem' }}>A</Avatar>
+            <Avatar sx={{ width: 36, height: 36, bgcolor: 'secondary.main', fontSize: '0.9rem', border: '2px solid #1e293b' }}>A</Avatar>
             <Box sx={{ overflow: 'hidden' }}>
-              <Typography variant="subtitle2" noWrap fontWeight="bold">Admin User</Typography>
-              <Typography variant="caption" color="text.secondary" noWrap display="block">admin@w33d.xyz</Typography>
+              <Typography variant="subtitle2" noWrap fontWeight="bold" sx={{ color: 'white' }}>Admin User</Typography>
+              <Typography variant="caption" sx={{ color: '#94a3b8' }} noWrap display="block">admin@w33d.xyz</Typography>
             </Box>
           </Stack>
         </Box>
@@ -96,8 +104,8 @@ export default function DashboardLayout() {
           onClick={handleLogout}
           sx={{ 
             borderRadius: 2, 
-            color: 'error.main',
-            '&:hover': { bgcolor: 'error.light', color: 'error.dark', bgcolorOpacity: 0.1 }
+            color: '#ef4444',
+            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.1)' }
           }}
         >
           <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
@@ -110,7 +118,7 @@ export default function DashboardLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f1f5f9' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f8fafc' }}>
       <AppBar 
         position="fixed" 
         sx={{ 

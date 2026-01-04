@@ -104,6 +104,12 @@ function clean_system() {
     docker system prune -f
 }
 
+function full_cleanup() {
+    print_info "WARNING: Removing ALL project resources (containers, volumes, networks, images)..."
+    $DC down -v --rmi local --remove-orphans
+    print_success "All project resources and volumes have been removed."
+}
+
 function help() {
     echo "Usage: ./deploy.sh [command]"
     echo "Commands:"
@@ -114,7 +120,8 @@ function help() {
     echo "  restart - Restart services"
     echo "  logs    - View logs"
     echo "  status  - Check service status"
-    echo "  clean   - Clean unused docker resources"
+    echo "  clean   - Stop and remove ALL resources including VOLUMES (Reset project)"
+    echo "  prune   - Prune unused docker resources (System-wide)"
     echo "  help    - Show this help message"
 }
 
@@ -156,6 +163,9 @@ case "$1" in
         show_status
         ;;
     clean)
+        full_cleanup
+        ;;
+    prune)
         clean_system
         ;;
     *)
