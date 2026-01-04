@@ -18,7 +18,7 @@ import (
 
 func main() {
 	configPath := flag.String("config", "configs/config.yaml", "Path to configuration file")
-	migrate := flag.Bool("migrate", false, "Run database migrations")
+	// migrate := flag.Bool("migrate", false, "Run database migrations") // Deprecated: Always auto-migrate
 	flag.Parse()
 
 	// 1. Load Config
