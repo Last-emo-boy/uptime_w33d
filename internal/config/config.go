@@ -56,6 +56,14 @@ func LoadConfig(path string) (*Config, error) {
 	viper.SetDefault("REDIS_PASSWORD", "")
 	viper.SetDefault("REDIS_DB", 0)
 
+	// Database Defaults (can be overridden by env vars)
+	viper.SetDefault("DATABASE_HOST", "db")
+	viper.SetDefault("DATABASE_PORT", "5432")
+	viper.SetDefault("DATABASE_USER", "postgres")
+	viper.SetDefault("DATABASE_PASSWORD", "postgres")
+	viper.SetDefault("DATABASE_DBNAME", "uptime_w33d")
+	viper.SetDefault("DATABASE_SSLMODE", "disable")
+
 	viper.SetDefault("JWT_SECRET", "changeme")
 	viper.SetDefault("JWT_EXPIRY", 24)
 
