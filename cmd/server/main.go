@@ -64,22 +64,14 @@ func main() {
 		logger.Log.Info("Database connected successfully")
 		
 		// 4. Run Migrations
-		if *migrate {
-			logger.Log.Info("Running database migrations...")
-			if err := repository.Migrate(); err != nil {
-				logger.Log.Error("Failed to run migrations", zap.Error(err))
-				os.Exit(1)
-			}
-			logger.Log.Info("Migrations completed successfully")
+		// Always auto-migrate on startup to ensure schema consistency
+		logger.Log.Info("Running database migrations...")
+		if err := repository.Migrate(); err != nil {
+			logger.Log.Error("Failed to run migrations", zap.Error(err))
+			// Exit on migration failure in prod might be safer, but for now we log error
+			// os.Exit(1)
 		} else {
-			// Auto-migrate on startup for dev convenience (optional)
-			// In prod, use the flag.
-			if cfg.Server.Mode == "debug" {
-				logger.Log.Info("Auto-migrating in debug mode...")
-				if err := repository.Migrate(); err != nil {
-					logger.Log.Error("Failed to auto-migrate", zap.Error(err))
-				}
-			}
+			logger.Log.Info("Migrations completed successfully")
 		}
 	}
 

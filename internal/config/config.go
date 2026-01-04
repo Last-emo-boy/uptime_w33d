@@ -51,21 +51,27 @@ func LoadConfig(path string) (*Config, error) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	viper.SetDefault("REDIS_HOST", "localhost")
-	viper.SetDefault("REDIS_PORT", "6379")
-	viper.SetDefault("REDIS_PASSWORD", "")
-	viper.SetDefault("REDIS_DB", 0)
+	viper.SetDefault("redis.host", "redis")
+	viper.SetDefault("redis.port", "6379")
+	viper.SetDefault("redis.password", "")
+	viper.SetDefault("redis.db", 0)
 
-	// Database Defaults (can be overridden by env vars)
-	viper.SetDefault("DATABASE_HOST", "db")
-	viper.SetDefault("DATABASE_PORT", "5432")
-	viper.SetDefault("DATABASE_USER", "postgres")
-	viper.SetDefault("DATABASE_PASSWORD", "postgres")
-	viper.SetDefault("DATABASE_DBNAME", "uptime_w33d")
-	viper.SetDefault("DATABASE_SSLMODE", "disable")
+	// Database Defaults
+	viper.SetDefault("database.host", "db")
+	viper.SetDefault("database.port", "5432")
+	viper.SetDefault("database.user", "postgres")
+	viper.SetDefault("database.password", "postgres")
+	viper.SetDefault("database.dbname", "uptime_w33d")
+	viper.SetDefault("database.sslmode", "disable")
 
-	viper.SetDefault("JWT_SECRET", "changeme")
-	viper.SetDefault("JWT_EXPIRY", 24)
+	viper.SetDefault("server.port", "8080")
+	viper.SetDefault("server.mode", "release")
+	
+	viper.SetDefault("log.level", "info")
+	viper.SetDefault("log.encoding", "json")
+
+	viper.SetDefault("jwt.secret", "changeme")
+	viper.SetDefault("jwt.expiry", 24)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
