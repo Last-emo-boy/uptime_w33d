@@ -7,9 +7,9 @@ import api from '../lib/api';
 import { 
   Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, 
   Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, 
-  MenuItem, Stack, IconButton
+  MenuItem, Stack
 } from '@mui/material';
-import { Plus, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Plus, CheckCircle } from 'lucide-react';
 
 const incidentSchema = z.object({
   title: z.string().min(1, 'Title is required'),

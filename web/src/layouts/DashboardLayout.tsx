@@ -25,6 +25,7 @@ export default function DashboardLayout() {
     { text: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
     { text: 'Monitors', icon: <Activity size={20} />, path: '/monitors' },
     { text: 'Channels', icon: <Bell size={20} />, path: '/channels' },
+    { text: 'Incidents', icon: <AlertTriangle size={20} />, path: '/incidents' },
   ];
 
   const drawer = (

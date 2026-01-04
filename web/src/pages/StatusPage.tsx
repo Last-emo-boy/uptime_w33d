@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
+import { Link as RouterLink } from 'react-router-dom';
 import { 
   Typography, Paper, Container, Box, Chip, Stack, LinearProgress,
-  Accordion, AccordionSummary, AccordionDetails
+  Accordion, AccordionSummary, AccordionDetails, Link
 } from '@mui/material';
 import { CheckCircle, XCircle, AlertCircle, ChevronDown, Activity, Globe, Server, Radio } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
