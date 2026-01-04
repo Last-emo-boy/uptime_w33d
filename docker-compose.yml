@@ -31,11 +31,11 @@ services:
       - db
       - redis
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-uptime_w33d}
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_DBNAME: ${DB_NAME:-uptime_w33d}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       SERVER_PORT: 8080
