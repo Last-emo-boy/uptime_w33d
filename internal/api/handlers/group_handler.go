@@ -10,94 +10,57 @@ import (
 	"uptime_w33d/internal/services"
 )
 
-type GroupHandler struct {
-	groupService services.GroupService
+type MonitorGroupHandler struct {
+	groupSvc services.MonitorGroupService
 }
 
-func NewGroupHandler(groupService services.GroupService) *GroupHandler {
-	return &GroupHandler{groupService: groupService}
+func NewMonitorGroupHandler(groupSvc services.MonitorGroupService) *MonitorGroupHandler {
+	return &MonitorGroupHandler{groupSvc: groupSvc}
 }
 
-func (h *GroupHandler) Create(c *gin.Context) {
-	var group models.MonitorGroup
-	if err := c.ShouldBindJSON(&group); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := h.groupService.CreateGroup(&group); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, group)
-}
-
-func (h *GroupHandler) Get(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
-		return
-	}
-
-	group, err := h.groupService.GetGroup(uint(id))
+func (h *MonitorGroupHandler) List(c *gin.Context) {
+	groups, err := h.groupSvc.ListGroups()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	if group == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Group not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, group)
-}
-
-func (h *GroupHandler) List(c *gin.Context) {
-	groups, err := h.groupService.ListGroups()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
 	c.JSON(http.StatusOK, groups)
 }
 
-func (h *GroupHandler) Update(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
-		return
-	}
-
+func (h *MonitorGroupHandler) Create(c *gin.Context) {
 	var group models.MonitorGroup
 	if err := c.ShouldBindJSON(&group); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.groupService.UpdateGroup(uint(id), &group); err != nil {
+	if err := h.groupSvc.CreateGroup(&group); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Group updated successfully"})
+	c.JSON(http.StatusCreated, group)
 }
 
-func (h *GroupHandler) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+func (h *MonitorGroupHandler) Update(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	var group models.MonitorGroup
+	if err := c.ShouldBindJSON(&group); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.groupService.DeleteGroup(uint(id)); err != nil {
+	if err := h.groupSvc.UpdateGroup(uint(id), &group); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"message": "Group updated"})
+}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Group deleted successfully"})
+func (h *MonitorGroupHandler) Delete(c *gin.Context) {
+	id, _ := strconv.Atoi(c.Param("id"))
+	if err := h.groupSvc.DeleteGroup(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Group deleted"})
 }

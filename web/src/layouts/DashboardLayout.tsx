@@ -1,14 +1,17 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Box, Drawer, AppBar, Toolbar, List, Typography, 
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, IconButton, Stack
 } from '@mui/material';
-import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle, Globe } from 'lucide-react';
+import { LayoutDashboard, Activity, LogOut, Bell, Menu, ChevronRight, AlertTriangle, Globe, Folder } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '../lib/api';
 
 const drawerWidth = 260;
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -18,12 +21,13 @@ export default function DashboardLayout() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const menuItems = [
     { text: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
     { text: 'Monitors', icon: <Activity size={20} />, path: '/monitors' },
+    { text: 'Groups', icon: <Folder size={20} />, path: '/monitor-groups' },
     { text: 'Status Pages', icon: <Globe size={20} />, path: '/status-pages' },
     { text: 'Channels', icon: <Bell size={20} />, path: '/channels' },
     { text: 'Incidents', icon: <AlertTriangle size={20} />, path: '/incidents' },

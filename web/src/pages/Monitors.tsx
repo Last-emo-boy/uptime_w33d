@@ -9,7 +9,7 @@ import {
   Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, TextField, 
   MenuItem, Stack, Box, Avatar
 } from '@mui/material';
-import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy, Gamepad2, Container } from 'lucide-react';
+import { Plus, Pencil, Trash2, Globe, Server, Activity, Radio, Copy, Gamepad2, Container, Shield } from 'lucide-react';
 
 // --- Types & Schema ---
 
@@ -27,6 +27,7 @@ const monitorSchema = z.object({
   keyword: z.string().optional(),
   json_path: z.string().optional(),
   json_value: z.string().optional(),
+  group_id: z.number().optional(),
 });
 
 type MonitorForm = z.infer<typeof monitorSchema>;
@@ -36,6 +37,12 @@ interface Monitor extends MonitorForm {
   last_status: string;
   enabled: boolean;
   push_token?: string;
+  group_id?: number;
+}
+
+interface MonitorGroup {
+  id: number;
+  name: string;
 }
 
 const MonitorIcon = ({ type }: { type: string }) => {
@@ -58,12 +65,22 @@ const MonitorIcon = ({ type }: { type: string }) => {
 export default function Monitors() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [badgeOpen, setBadgeOpen] = useState(false);
+  const [selectedMonitor, setSelectedMonitor] = useState<Monitor | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const { data: monitors, isLoading } = useQuery<Monitor[]>({
     queryKey: ['monitors'],
     queryFn: async () => {
       const res = await api.get('/monitors');
+      return res.data;
+    },
+  });
+
+  const { data: groups } = useQuery<MonitorGroup[]>({
+    queryKey: ['monitor-groups'],
+    queryFn: async () => {
+      const res = await api.get('/monitor-groups');
       return res.data;
     },
   });
@@ -126,6 +143,7 @@ export default function Monitors() {
       setValue('keyword', (monitor as any).keyword || '');
       setValue('json_path', (monitor as any).json_path || '');
       setValue('json_value', (monitor as any).json_value || '');
+      setValue('group_id', monitor.group_id);
     } else {
       setEditingId(null);
       reset({
@@ -142,6 +160,7 @@ export default function Monitors() {
         keyword: '',
         json_path: '',
         json_value: '',
+        group_id: undefined,
       });
     }
     setOpen(true);
@@ -165,6 +184,11 @@ export default function Monitors() {
     if (confirm('Are you sure you want to delete this monitor?')) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleBadge = (monitor: Monitor) => {
+    setSelectedMonitor(monitor);
+    setBadgeOpen(true);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -242,6 +266,9 @@ export default function Monitors() {
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 3 }}>
                   <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                    <IconButton size="small" onClick={() => handleBadge(monitor)} sx={{ color: 'text.secondary' }}>
+                      <Shield size={18} />
+                    </IconButton>
                     <IconButton size="small" onClick={() => handleOpen(monitor)} sx={{ color: 'text.secondary' }}>
                       <Pencil size={18} />
                     </IconButton>
@@ -262,6 +289,28 @@ export default function Monitors() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog open={badgeOpen} onClose={() => setBadgeOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography variant="h6" fontWeight="bold">Status Badge</Typography>
+        </DialogTitle>
+        <DialogContent>
+           <Box sx={{ my: 2, display: 'flex', justifyContent: 'center' }}>
+             <img src={`/api/badge/${selectedMonitor?.id}/status.svg`} alt="Status Badge" />
+           </Box>
+           <Typography variant="subtitle2" gutterBottom>Markdown</Typography>
+           <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 2, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all', mb: 2 }}>
+             [![Status](http://{window.location.host}/api/badge/{selectedMonitor?.id}/status.svg)](http://{window.location.host}/status/default)
+           </Box>
+           <Typography variant="subtitle2" gutterBottom>HTML</Typography>
+           <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 2, fontFamily: 'monospace', fontSize: '0.85rem', wordBreak: 'break-all' }}>
+             &lt;img src="http://{window.location.host}/api/badge/{selectedMonitor?.id}/status.svg" alt="Status" /&gt;
+           </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setBadgeOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ pb: 1 }}>
@@ -286,6 +335,28 @@ export default function Monitors() {
                   />
                 )}
               />
+
+              <Controller
+                name="group_id"
+                control={control}
+                render={({ field }) => (
+                  <TextField 
+                    {...field} 
+                    select 
+                    label="Monitor Group" 
+                    fullWidth
+                    helperText="Optional: Group monitors together on status page"
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  >
+                    <MenuItem value=""><em>None</em></MenuItem>
+                    {groups?.map((group) => (
+                      <MenuItem key={group.id} value={group.id}>{group.name}</MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
               <Controller
                 name="type"
                 control={control}

@@ -26,13 +26,15 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 
 	systemHandler := handlers.NewSystemHandler(authService)
 
+// Monitor Routes
 	monitorRepo := repository.NewMonitorRepository(db)
 	monitorService := services.NewMonitorService(monitorRepo)
 	monitorHandler := handlers.NewMonitorHandler(monitorService)
 
-	groupRepo := repository.NewGroupRepository(db)
-	groupService := services.NewGroupService(groupRepo)
-	groupHandler := handlers.NewGroupHandler(groupService)
+	// Monitor Group Routes
+	groupRepo := repository.NewMonitorGroupRepository(db)
+	groupSvc := services.NewMonitorGroupService(groupRepo)
+	groupHandler := handlers.NewMonitorGroupHandler(groupSvc)
 
 	// Subscriptions & Notifications
 	channelRepo := repository.NewChannelRepository(db)
@@ -57,6 +59,8 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	incidentService := services.NewIncidentService(incidentRepo)
 	incidentHandler := handlers.NewIncidentHandler(incidentService)
 
+	badgeHandler := handlers.NewBadgeHandler(monitorService)
+
 	// API Group
 	api := r.Group("/api")
 	{
@@ -72,6 +76,9 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		api.GET("/public/status/:slug", statusHandler.GetStatus) // Named
 		api.GET("/public/monitors/:id/history", statusHandler.GetMonitorHistory)
 		api.GET("/public/incidents", incidentHandler.ListActive) // Public incidents
+
+		// Badge Route
+		api.GET("/badge/:id/status.svg", badgeHandler.GetStatusBadge)
 
 		// System Status
 		api.GET("/system/status", systemHandler.GetStatus)
@@ -113,12 +120,11 @@ func SetupRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				monitors.DELETE("/:id", monitorHandler.Delete)
 			}
 
-			// Group Routes
-			groups := protected.Group("/groups")
+			// Monitor Groups
+			groups := protected.Group("/monitor-groups")
 			{
 				groups.GET("", groupHandler.List)
 				groups.POST("", groupHandler.Create)
-				groups.GET("/:id", groupHandler.Get)
 				groups.PUT("/:id", groupHandler.Update)
 				groups.DELETE("/:id", groupHandler.Delete)
 			}

@@ -17,6 +17,7 @@ interface PublicMonitor {
   last_checked_at: string;
   uptime_24h: number;
   certificate_expiry?: string;
+  group_name?: string;
 }
 
 interface Incident {
@@ -158,6 +159,20 @@ export default function StatusPage() {
   const pageTitle = data?.config?.title || 'Uptime W33d';
   const pageDesc = data?.config?.description || (isOperational ? 'Everything is running smoothly.' : 'We are currently experiencing issues.');
 
+  // Group Monitors
+  const groupedMonitors = (data?.monitors || []).reduce((acc, monitor) => {
+    const group = monitor.group_name || 'Other Services';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(monitor);
+    return acc;
+  }, {} as Record<string, PublicMonitor[]>);
+
+  const sortedGroups = Object.keys(groupedMonitors).sort((a, b) => {
+    if (a === 'Other Services') return 1;
+    if (b === 'Other Services') return -1;
+    return a.localeCompare(b);
+  });
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 10 }}>
       {/* Custom CSS Injection */}
@@ -210,125 +225,128 @@ export default function StatusPage() {
           </Paper>
         </motion.div>
 
-        {/* Incidents Section */}
+        {/* Active Incidents */}
         {incidents && incidents.length > 0 && (
           <Box sx={{ mb: 6 }}>
-             <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
+            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 2 }}>
               Active Incidents
             </Typography>
             <Stack spacing={2}>
               {incidents.map((incident) => (
                 <Paper 
-                  key={incident.id}
+                  key={incident.id} 
                   elevation={0}
                   sx={{ 
                     p: 3, 
-                    border: 1, 
-                    borderColor: 'warning.light', 
-                    bgcolor: '#fffbeb',
-                    borderRadius: 3 
+                    borderLeft: 6, 
+                    borderColor: 'warning.main',
+                    bgcolor: 'warning.light',
+                    bgOpacity: 0.1
                   }}
                 >
-                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                    <AlertCircle size={20} className="text-amber-600" />
-                    <Typography variant="h6" fontWeight="bold" color="warning.dark">
-                      {incident.title}
-                    </Typography>
-                  </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    Started at: {new Date(incident.start_time).toLocaleString()}
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    {incident.title}
                   </Typography>
-                  <Chip 
-                    label={incident.impact.toUpperCase()} 
-                    size="small" 
-                    color="warning" 
-                    sx={{ mt: 2, fontWeight: 'bold' }} 
-                  />
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    {incident.impact}
+                  </Typography>
+                  <Chip label={incident.status} color="warning" size="small" />
                 </Paper>
               ))}
             </Stack>
           </Box>
         )}
 
-        {/* Monitors List */}
-        <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
-          System Metrics
-        </Typography>
-        
-        <Stack spacing={3}>
-          {data?.monitors?.map((monitor, index) => (
-            <motion.div
-              key={monitor.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+        {/* Monitor Groups */}
+        {sortedGroups.map((groupName) => (
+          <Box key={groupName} sx={{ mb: 5 }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              color="text.secondary" 
+              gutterBottom 
+              sx={{ mb: 2, px: 1, textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: 1 }}
             >
-              <Accordion 
-                elevation={0} 
-                sx={{ 
-                  border: 1, 
-                  borderColor: 'divider', 
-                  borderRadius: '12px !important',
-                  overflow: 'hidden',
-                  '&:before': { display: 'none' }
-                }}
-              >
-                <AccordionSummary expandIcon={<ChevronDown className="text-slate-400" />}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%" pr={2}>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Box sx={{ p: 1, bgcolor: 'background.default', borderRadius: 2 }}>
-                        <MonitorIcon type={monitor.type} />
-                      </Box>
-                      <Box>
-                        <Typography variant="h6" fontWeight="bold">
-                          {monitor.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                          {monitor.type}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                    
-                    <Stack direction="row" spacing={3} alignItems="center">
-                      {monitor.certificate_expiry && (
-                        <Chip 
-                          label={`SSL: ${new Date(monitor.certificate_expiry).toLocaleDateString()}`}
-                          size="small"
-                          variant="outlined"
-                          color={new Date(monitor.certificate_expiry) < new Date(Date.now() + 7*24*60*60*1000) ? 'warning' : 'default'}
-                        />
-                      )}
+              {groupName}
+            </Typography>
+            
+            <Stack spacing={2}>
+              {groupedMonitors[groupName].map((monitor) => (
+                <Accordion 
+                  key={monitor.id} 
+                  disableGutters 
+                  elevation={0}
+                  sx={{ 
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '12px !important',
+                    '&:before': { display: 'none' },
+                    overflow: 'hidden',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                    }
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ChevronDown size={20} />}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" width="100%" pr={2}>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Box sx={{ 
+                          p: 1, 
+                          borderRadius: 2, 
+                          bgcolor: monitor.last_status === 'up' ? 'success.light' : 'error.light',
+                          color: monitor.last_status === 'up' ? 'success.dark' : 'error.dark',
+                          bgOpacity: 0.2
+                        }}>
+                          <MonitorIcon type={monitor.type} />
+                        </Box>
+                        <Box>
+                          <Typography fontWeight="600" variant="body1">
+                            {monitor.name}
+                          </Typography>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            {monitor.certificate_expiry && (
+                              <Chip 
+                                label={`SSL: ${new Date(monitor.certificate_expiry).toLocaleDateString()}`} 
+                                size="small" 
+                                variant="outlined" 
+                                sx={{ height: 20, fontSize: '0.65rem' }} 
+                              />
+                            )}
+                          </Stack>
+                        </Box>
+                      </Stack>
 
-                      <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-                        <Typography variant="body2" color="text.secondary">
-                          Uptime (24h)
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Box sx={{ width: 100, display: { xs: 'none', sm: 'block' } }}>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={monitor.uptime_24h} 
+                            color={monitor.uptime_24h > 98 ? "success" : monitor.uptime_24h > 90 ? "warning" : "error"}
+                            sx={{ height: 6, borderRadius: 3 }} 
+                          />
+                        </Box>
+                        <Typography 
+                          fontWeight="bold" 
+                          color={monitor.last_status === 'up' ? 'success.main' : 'error.main'}
+                        >
+                          {monitor.last_status === 'up' ? 'Operational' : 'Down'}
                         </Typography>
-                        <Typography variant="body1" fontWeight="bold" color="success.main">
-                          {monitor.uptime_24h}%
-                        </Typography>
-                      </Box>
-                      
-                      <Chip 
-                        icon={monitor.last_status === 'up' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                        label={monitor.last_status === 'up' ? 'Operational' : 'Down'} 
-                        color={monitor.last_status === 'up' ? 'success' : 'error'} 
-                        variant="filled"
-                        size="small"
-                        sx={{ fontWeight: 600, px: 1 }}
-                      />
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </AccordionSummary>
-                <AccordionDetails sx={{ bgcolor: '#f8fafc', p: 3 }}>
-                  <Typography variant="subtitle2" gutterBottom color="text.secondary" sx={{ mb: 2 }}>
-                    Response Time (Last 50 checks)
-                  </Typography>
-                  <MonitorHistoryChart monitorId={monitor.id} />
-                </AccordionDetails>
-              </Accordion>
-            </motion.div>
-          ))}
-        </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails sx={{ bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider', p: 3 }}>
+                    <Typography variant="subtitle2" gutterBottom>Response Time (Last 50 Checks)</Typography>
+                    <Box sx={{ height: 200, width: '100%' }}>
+                      <MonitorHistoryChart monitorId={monitor.id} />
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Stack>
+          </Box>
+        ))}
 
         <Box sx={{ mt: 8, textAlign: 'center', pb: 4 }}>
           <Typography variant="body2" color="text.secondary">

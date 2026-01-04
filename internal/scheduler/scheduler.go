@@ -10,6 +10,7 @@ import (
 	"uptime_w33d/internal/probe"
 	"uptime_w33d/internal/repository"
 	"uptime_w33d/internal/services"
+	"uptime_w33d/pkg/cache"
 	"uptime_w33d/pkg/logger"
 )
 
@@ -138,6 +139,9 @@ func (s *Scheduler) checkPushMonitor(m models.Monitor) {
 			
 			// Notify
 			s.notifySvc.Notify(m, "down", "Heartbeat overdue")
+			
+			// Invalidate Cache
+			_ = cache.Delete("public_status_page_default")
 		}
 	}
 }
@@ -210,6 +214,9 @@ func (s *Scheduler) executeCheck(m models.Monitor) {
 		)
 		
 		s.notifySvc.Notify(m, status, result.Message)
+		
+		// Invalidate Cache
+		_ = cache.Delete("public_status_page_default")
 	}
 
 	// 3. Update Monitor Last Status

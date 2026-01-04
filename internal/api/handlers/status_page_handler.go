@@ -38,6 +38,7 @@ type PublicMonitorStatus struct {
 	LastCheckedAt     *time.Time `json:"last_checked_at"`
 	CertificateExpiry *time.Time `json:"certificate_expiry,omitempty"`
 	Uptime24h         float64    `json:"uptime_24h"` 
+	GroupName         string     `json:"group_name,omitempty"`
 }
 
 // Admin Handlers for Status Pages
@@ -160,10 +161,11 @@ func (h *StatusPageHandler) GetStatus(c *gin.Context) {
 				LastStatus:        m.LastStatus,
 				LastCheckedAt:     m.LastCheckedAt,
 				CertificateExpiry: m.CertificateExpiry,
-				Uptime24h:         uptime,
-			})
-		}
+			Uptime24h:         uptime,
+			GroupName:         func() string { if m.Group != nil { return m.Group.Name }; return "" }(),
+		})
 	}
+}
 
 	response := gin.H{
 		"config":        page,
